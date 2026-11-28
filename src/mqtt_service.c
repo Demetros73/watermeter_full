@@ -82,9 +82,19 @@ static esp_err_t start_client(const app_config_t *cfg)
     if (s_mqtt_password[0]) mqtt_cfg.credentials.authentication.password = s_mqtt_password;
     s_client = esp_mqtt_client_init(&mqtt_cfg);
     if (!s_client) return ESP_FAIL;
-    ESP_ERROR_CHECK(esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event, NULL));
-    esp_err_t err = esp_mqtt_client_start(s_client);
-    if (err == ESP_OK) s_started = true;
+    esp_err_t err = esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event, NULL);
+    if (err != ESP_OK) {
+        (void)esp_mqtt_client_destroy(s_client);
+        s_client = NULL;
+        return err;
+    }
+    err = esp_mqtt_client_start(s_client);
+    if (err != ESP_OK) {
+        (void)esp_mqtt_client_destroy(s_client);
+        s_client = NULL;
+        return err;
+    }
+    s_started = true;
     return err;
 }
 
@@ -140,6 +150,6 @@ static void mqtt_task(void *arg)
 
 esp_err_t mqtt_service_init(void)
 {
-    if (xTaskCreate(mqtt_task, "mqtt_service", 4096, NULL, 4, NULL) != pdPASS) return ESP_ERR_NO_MEM;
+    if (xTaskCreate(mqtt_task, "mqtt_service", 6144, NULL, 4, NULL) != pdPASS) return ESP_ERR_NO_MEM;
     return ESP_OK;
 }

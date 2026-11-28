@@ -111,11 +111,14 @@ esp_err_t wifi_manager_init(void)
     app_config_t cfg;
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     wifi_config_t wifi_cfg;
+    esp_netif_t *sta_netif;
     ESP_RETURN_ON_ERROR(esp_netif_init(), TAG, "netif init");
     ESP_RETURN_ON_ERROR(esp_event_loop_create_default(), TAG, "event loop");
     s_wifi_events = xEventGroupCreate();
     if (!s_wifi_events) return ESP_ERR_NO_MEM;
-    ESP_RETURN_ON_ERROR(esp_netif_create_default_wifi_sta() ? ESP_OK : ESP_FAIL, TAG, "STA netif");
+    sta_netif = esp_netif_create_default_wifi_sta();
+    ESP_RETURN_ON_ERROR(sta_netif ? ESP_OK : ESP_FAIL, TAG, "STA netif");
+    ESP_RETURN_ON_ERROR(esp_netif_set_hostname(sta_netif, "watermeter_esp32_c3"), TAG, "STA hostname");
     ESP_RETURN_ON_ERROR(esp_wifi_init(&init_cfg), TAG, "wifi init");
     ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL), TAG, "wifi handler");
     ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL), TAG, "ip handler");
